@@ -1,1 +1,1 @@
-simple implementation of fuzzy logic transition
+naive implementation of fuzzy logic transition
