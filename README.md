@@ -1,1 +1,1 @@
-naive implementation of fuzzy logic transition
+fuzzy logic flow & word vector space traveling
