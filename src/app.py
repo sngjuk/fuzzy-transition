@@ -4,26 +4,40 @@ import re
 from collections import OrderedDict
 from functools import reduce
 
-import numpy as np
-from scipy.spatial import distance
-
 from model import Model
 from node import Node
-from traverse import search_path, across_vector_space
+from traverse import search_path, across_vector_space, search_hidden_path_with_length
 
 glossary = OrderedDict()
 glossary_vector = []
 model = Model()
 
 
-def most_sim_name(target):
-    target_vector = model.get_word_vector(target)
+def preprocess_input():
+    in_text = input()
+    in_text = re.sub(r'[ \t]+$', '', in_text)
+    re_res = re.search(r'\s*(.*)', in_text)
+    if re_res:
+        in_text = re_res.group(1)
 
-    distances = distance.cdist(np.array([target_vector]), np.array(glossary_vector), "cosine")[0]
-    min_index = np.argmin(distances)
-    min_distance = distances[min_index]
+    return in_text
 
-    return list(glossary.items())[int(min_index)][0], 1-min_distance
+
+def load_glossary(load_file):
+    if os.path.isfile(load_file):
+        global glossary
+        global glossary_vector
+        glossary, glossary_vector = pickle.load(open(load_file, 'rb'))
+        print('glossary loaded')
+
+
+def save_glossary():
+    pickle.dump((glossary, glossary_vector), open("save.p", "wb"))
+
+
+def list_glossary():
+    for i in glossary:
+        print(glossary[i].name)
 
 
 def add_noema(name):
@@ -39,58 +53,73 @@ def add_noema(name):
     return True
 
 
-def add_implication(source_name, target_name, probability, core=None):
-
+def add_implication(source_name, target_name, probability):
     add_noema(source_name)
     add_noema(target_name)
 
-    res_prob = glossary[source_name].add_implication(target_name, model.get_word_vector(target_name), probability, core)
-    glossary[source_name].sort_implication()
+    res_prob = glossary[source_name].add_implication(target_name, model.get_word_vector(target_name), probability)
+    glossary[source_name].sort_reason()
 
-    print(f'\n//{source_name} -> {target_name}; {res_prob[0]}, count: {res_prob[1]} core: {core}')
+    print(f'\n//{source_name} -> {target_name}; {res_prob[0]}, count: {res_prob[1]}')
+
+
+def add_belief(source_name, target_name, probability):
+    add_noema(source_name)
+    add_noema(target_name)
+
+    res_prob = glossary[source_name].add_belief(target_name, model.get_word_vector(target_name), probability)
+    glossary[source_name].sort_reason()
+
+    print(f'\n//{source_name} -> {target_name}; {res_prob[0]}, count: {res_prob[1]}')
+
+
+def add_membership(source_name, target_name, target_prob, source_prob):
+    add_noema(source_name)
+    add_noema(target_name)
+
+    res_prob = glossary[source_name].add_membership(target_name, model.get_word_vector(target_name), target_prob)
+    glossary[source_name].sort_reason()
+
+    print(f'\n//{source_name} -> {target_name}; {res_prob[0]}, count: {res_prob[1]}')
+
+    res_prob = glossary[target_name].add_membership(source_name, model.get_word_vector(source_name), source_prob)
+    glossary[target_name].sort_reason()
+
+    print(f'\n//{target_name} -> {source_name}; {res_prob[0]}, count: {res_prob[1]}')
+
+
+def show_reasons(name):
+    if not len(glossary) or name not in glossary:
+        print('empty glossary or not exist noema')
+        return
+
+    for i in glossary[name].reason:
+        print(i)
 
 
 def find_path(source, dest):
-    usr_input = source, dest
-
-    source_sim = None
-    dest_sim = None
-
-    if source not in glossary:
-        source, source_sim = most_sim_name(source)
-
-    if dest not in glossary:
-        dest, dest_sim = most_sim_name(dest)
+    if not len(glossary):
+        print('empty glossary')
+        return
 
     # path_prob: [[path_list, prob_list], ...]
-    path_prob = search_path(glossary, source, dest)
+    path_prob = search_path(glossary, glossary_vector, model, source, dest)
 
-    for idx, i in enumerate(path_prob):
-        if not source == usr_input[0]:
-            path_prob[idx][0].insert(0, usr_input[0])
-            path_prob[idx][1].insert(0, source_sim)
-
-    for idx, i in enumerate(path_prob):
-        if not dest == usr_input[1]:
-            path_prob[idx][0].append(usr_input[1])
-            path_prob[idx][1].append(dest_sim)
+    if not len(path_prob):
+        across_space(source, dest)
+        print('\nlogical path not found in system!! trying to hop!-\n')
 
     prob_sum = 0
     for i in path_prob:
         print('path;', i[0])
-        print('    ', end='')
+        print('        ', end='')
         for j in i[1]:
             print('   %2.2f' % j, end='')
         prob = reduce((lambda x, y: x * y), i[1])
-        print(' prob; ', '%.2f' % prob)
+        print('\nprob; ', '%.2f' % prob)
         prob_sum += prob
 
     print("\n total prob; %.2f percent" % prob_sum)
-
-
-def show_implication(name):
-    for i in glossary[name].implication:
-        print(i)
 
 
 def across_space(source, dest):
@@ -98,43 +127,46 @@ def across_space(source, dest):
     print(path_prob)
 
 
-def list_glossary():
-    for i in glossary:
-        print(glossary[i].name)
+def search_hidden_path(source, length):
+    if not len(glossary):
+        print('empty glossary')
+        return
+
+    path_prob = search_hidden_path_with_length(glossary, glossary_vector, model, source, length)
+
+    if not len(path_prob):
+        print(f'not found hidden path for {source} with length {length}!, try smaller length')
+
+    for i in path_prob:
+        print('path;', i[0])
+        print('        ', end='')
+        for j in i[1]:
+            print('   %2.2f' % j, end='')
+        prob = reduce((lambda x, y: x * y), i[1])
+        print('\nprob; ', '%.2f' % prob)
 
 
-def load_glossary():
-    if os.path.isfile('save.p'):
-        global glossary
-        global glossary_vector
-        glossary, glossary_vector = pickle.load(open('save.p', 'rb'))
-        print('glossary loaded')
-
-
-def save_glossary():
-    pickle.dump((glossary, glossary_vector), open("save.p", "wb"))
-
-
-def show_nearest_neighbor(name, sim_threshold=0.39):
-    result = model.nearest_words(name, 30)
+def show_nearest_neighbor(name, num=30, sim_threshold=0.39):
+    result = model.filtered_nearest_neighbor(name, num, sim_threshold)
     for i in result:
-        my_regex = r".*" + re.escape(name) + r".*"
-        if re.search(my_regex, i[0]):
-            continue
-        elif i[1] > sim_threshold:
-            print(i)
+        print(i)
 
 
-def cli():
-    load_glossary()
+def show_distance(text1, text2):
+    print('dist; %.4f' % model.get_distance(text1, text2))
+
+
+def cli(load_file):
+    load_glossary(load_file)
     print(glossary.keys(), '\n')
 
     while True:
         print('===== Select =====\nl; list glossary\na; add name\nai; add implication\
-              \nac: add core belief \ndi: delete implication \nac: add core belief\
-              \ncr: cross vector space \nsi: show implications\
-              \nsn: show nearest neighbor\nfp; find path\nx; exit')
-        sel = input()
+              \nab: add belief \nam: add membership\
+              \ncr: cross vector space \nsr: show reasons \nsd: show distance\
+              \nsh: search hidden path \nsn: show nearest neighbor\nfp; find path \
+              \ndi: delete implication \nx; exit')
+        sel = preprocess_input()
 
         if sel == 'l':
             # list glossary
@@ -142,57 +174,87 @@ def cli():
 
         elif sel == 'a':
             print('input; name')
-            name = input()
+            name = preprocess_input()
             # add noema
             res = add_noema(name)
             if not res:
                 print('already exist')
 
         elif sel == 'ai':
-            print('input; source_name target_name probability')
-            usr_input = input().split()
-            source_name = usr_input[0]
-            target_name = usr_input[1]
-            probability = float(usr_input[2])
+            print('input; source_name ')
+            source_name = preprocess_input()
+            print('input; target_name ')
+            target_name = preprocess_input()
+            print('input; probability')
+            probability = float(preprocess_input())
             # add implication
             add_implication(source_name, target_name, probability)
 
-        elif sel == 'ac':
-            print('input; source_name target_name probability')
-            usr_input = input().split()
-            source_name = usr_input[0]
-            target_name = usr_input[1]
-            probability = float(usr_input[2])
-            # add core belief
-            add_implication(source_name, target_name, probability, 'core')
+        elif sel == 'ab':
+            print('input; source_name ')
+            source_name = preprocess_input()
+            print('input; target_name ')
+            target_name = preprocess_input()
+            print('input; probability')
+            probability = float(preprocess_input())
+            # add belief
+            add_belief(source_name, target_name, probability)
 
-        elif sel == 'sn':
+        elif sel == 'am':
+            print('input; source_name ')
+            source_name = preprocess_input()
+            print('input; target_name ')
+            target_name = preprocess_input()
+            print('input; source->target probability')
+            target_prob = float(preprocess_input())
+            print('input; target->source probability')
+            source_prob = float(preprocess_input())
+            # add membership
+            add_membership(source_name, target_name, target_prob, source_prob)
+
+        elif sel == 'sr':
             print('input; name')
-            name = input()
-            # show nearest neighbor
-            show_nearest_neighbor(name)
+            name = preprocess_input()
+            # show reasons
+            show_reasons(name)
 
         elif sel == 'fp':
-            print('input; source dest')
-            usr_input = input().split()
-            source = usr_input[0]
-            dest = usr_input[1]
+            print('input; source ')
+            source = preprocess_input()
+            print('input; dest ')
+            dest = preprocess_input()
             # find path
             find_path(source, dest)
 
         elif sel == 'cr':
-            print('input; source dest')
-            usr_input = input().split()
-            source = usr_input[0]
-            dest = usr_input[1]
+            print('input; source ')
+            source = preprocess_input()
+            print('input; dest ')
+            dest = preprocess_input()
             # find path
             across_space(source, dest)
 
-        elif sel == 'si':
+        elif sel == 'sh':
+            print('input; source')
+            source = preprocess_input()
+            print('input; length')
+            length = int(preprocess_input())
+            # search hidden paths with length
+            search_hidden_path(source, length)
+
+        elif sel == 'sn':
             print('input; name')
-            name = input()
-            # show implications
-            show_implication(name)
+            name = preprocess_input()
+            # show nearest neighbor
+            show_nearest_neighbor(name)
+
+        elif sel == 'sd':
+            print('input; word1')
+            word1 = preprocess_input()
+            print('input; word2')
+            word2 = preprocess_input()
+            # show word distance
+            show_distance(word1, word2)
 
         elif sel == 'x':
             print('save & exit')
@@ -204,7 +266,8 @@ def cli():
 
 
 def main():
-    cli()
+    load_file = 'save.p'
+    cli(load_file)
 
 
 if __name__ == '__main__':
