@@ -11,6 +11,7 @@ from traverse import search_path, across_vector_space, search_hidden_path_with_l
 glossary = OrderedDict()
 glossary_vector = []
 model = Model()
+setting = {'depth_limit': 9, 'jump_limit': 1}
 
 
 def preprocess_input():
@@ -53,6 +54,16 @@ def add_noema(name):
     return True
 
 
+def delete_noema(name):
+    if name not in glossary:
+        return False
+
+    rm_idx = list(glossary.keys()).index(name)
+    del glossary[name]
+    del glossary_vector[rm_idx]
+    print(f'{name} deleted')
+
+
 def add_implication(source_name, target_name, probability):
     add_noema(source_name)
     add_noema(target_name)
@@ -88,13 +99,23 @@ def add_membership(source_name, target_name, target_prob, source_prob):
     print(f'\n//{target_name} -> {source_name}; {res_prob[0]}, count: {res_prob[1]}')
 
 
-def show_reasons(name):
-    if not len(glossary) or name not in glossary:
+def show_noema(name):
+    if len(glossary) == 0 or name not in glossary:
         print('empty glossary or not exist noema')
         return
 
-    for i in glossary[name].reason:
-        print(i)
+    print(f'// {name}')
+    print('=== membership ===')
+    for i in glossary[name].membership:
+        print(f'->{i}; prob {glossary[name].membership[i][0]}, count {glossary[name].membership[i][1]}')
+
+    print('\n=== implication ===')
+    for i in glossary[name].implication:
+        print(f'->{i}; prob {glossary[name].implication[i][0]}, count {glossary[name].implication[i][1]}')
+
+    print('\n=== belief ===')
+    for i in glossary[name].belief:
+        print(f'->{i}; prob {glossary[name].belief[i][0]}, count {glossary[name].belief[i][1]}')
 
 
 def find_path(source, dest):
@@ -103,11 +124,11 @@ def find_path(source, dest):
         return
 
     # path_prob: [[path_list, prob_list], ...]
-    path_prob = search_path(glossary, glossary_vector, model, source, dest)
+    path_prob = search_path(glossary, glossary_vector, model, source, dest, setting['depth_limit'], setting['jump_limit'])
 
     if not len(path_prob):
         across_space(source, dest)
-        print('\nlogical path not found in system!! trying to hop!-\n')
+        print('\nlogical path not found!! this is hop result!-\n')
 
     prob_sum = 0
     for i in path_prob:
@@ -116,10 +137,10 @@ def find_path(source, dest):
         for j in i[1]:
             print('   %2.2f' % j, end='')
         prob = reduce((lambda x, y: x * y), i[1])
-        print('\nprob; ', '%.2f' % prob)
+        print('\n~ %.2f' % prob)
         prob_sum += prob
 
-    print("\n total prob; %.2f percent" % prob_sum)
+    print("\n//total ~ %.2f " % prob_sum)
 
 
 def across_space(source, dest):
@@ -143,7 +164,7 @@ def search_hidden_path(source, length):
         for j in i[1]:
             print('   %2.2f' % j, end='')
         prob = reduce((lambda x, y: x * y), i[1])
-        print('\nprob; ', '%.2f' % prob)
+        print('\n~ %.2f' % prob)
 
 
 def show_nearest_neighbor(name, num=30, sim_threshold=0.39):
@@ -152,8 +173,8 @@ def show_nearest_neighbor(name, num=30, sim_threshold=0.39):
         print(i)
 
 
-def show_distance(text1, text2):
-    print('dist; %.4f' % model.get_distance(text1, text2))
+def show_similarity(text1, text2):
+    print('sim; %.4f' % model.get_similarity(text1, text2))
 
 
 def cli(load_file):
@@ -161,11 +182,12 @@ def cli(load_file):
     print(glossary.keys(), '\n')
 
     while True:
-        print('===== Select =====\nl; list glossary\na; add name\nai; add implication\
-              \nab: add belief \nam: add membership\
-              \ncr: cross vector space \nsr: show reasons \nsd: show distance\
-              \nsh: search hidden path \nsn: show nearest neighbor\nfp; find path \
-              \ndi: delete implication \nx; exit')
+        print('===== select =====\nl; list glossary\na; add name\ndn: delete name\nai; add implication\
+              \nab: add belief \nam: add membership \nnn: show nearest neighbor \
+              \nsn: show noema \nss: show similarity \n\n=== paths ===\
+              \nfp; find path  \ncr: cross vector space \
+              \nsh: search hidden path \n\
+              \nx; exit')
         sel = preprocess_input()
 
         if sel == 'l':
@@ -179,6 +201,12 @@ def cli(load_file):
             res = add_noema(name)
             if not res:
                 print('already exist')
+
+        elif sel == 'dn':
+            print('input; name to delete')
+            name = preprocess_input()
+            # delete noema
+            delete_noema(name)
 
         elif sel == 'ai':
             print('input; source_name ')
@@ -212,11 +240,11 @@ def cli(load_file):
             # add membership
             add_membership(source_name, target_name, target_prob, source_prob)
 
-        elif sel == 'sr':
+        elif sel == 'sn':
             print('input; name')
             name = preprocess_input()
-            # show reasons
-            show_reasons(name)
+            # show relations
+            show_noema(name)
 
         elif sel == 'fp':
             print('input; source ')
@@ -242,19 +270,19 @@ def cli(load_file):
             # search hidden paths with length
             search_hidden_path(source, length)
 
-        elif sel == 'sn':
+        elif sel == 'nn':
             print('input; name')
             name = preprocess_input()
             # show nearest neighbor
             show_nearest_neighbor(name)
 
-        elif sel == 'sd':
+        elif sel == 'ss':
             print('input; word1')
             word1 = preprocess_input()
             print('input; word2')
             word2 = preprocess_input()
             # show word distance
-            show_distance(word1, word2)
+            show_similarity(word1, word2)
 
         elif sel == 'x':
             print('save & exit')

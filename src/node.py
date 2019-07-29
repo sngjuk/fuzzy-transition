@@ -82,10 +82,9 @@ class Node:
             self._reason[target][2] += 1
             return self._reason[target][1], self._reason[target][2]
 
-        # default add-reason procedure
-        target_reason = self._reason[target]
+        # default add-reason procedure -> add with weight
         adjusted_probability = \
-            (target_reason[1] * target_reason[2] + probability) / (target_reason[2] + 1)
+            (self._reason[target][1] * self._reason[target][2] + probability) / (self._reason[target][2] + 1)
 
         self._reason[target][1] = adjusted_probability
         self._reason[target][2] += 1
@@ -93,4 +92,4 @@ class Node:
         return self._reason[target][1], self._reason[target][2]
 
     def sort_reason(self):
-        self._reason = OrderedDict(sorted(self._reason.items(), key=lambda x: x[1][1], reverse=True))
+        self._reason = OrderedDict(sorted(self._reason.items(), key=lambda x: abs(x[1][1]), reverse=True))

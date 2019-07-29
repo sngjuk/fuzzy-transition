@@ -50,7 +50,7 @@ class Model:
 
     # need to overwrite
     # // return type: List : e.g.) ['word', ... ]
-    # (include_freq=True): Tuple of List and numpy.ndarray : (['word', ... ], array([9886, 5953, 4888, ..., 5, 5, 5])))
+    # (include_freq=True): Tuple of List and numpy.ndarray : (['word', 'word2', ... ], array([9886, 5953, 4888, ..., 5, 5, 5])))
     def get_words(self, include_freq=False):
         return self.model.get_words(include_freq=include_freq)
 
@@ -77,5 +77,5 @@ class Model:
                 res.append(i)
         return res
 
-    def get_distance(self, word1, word2):
-        return distance.cosine(self.get_word_vector(word1), self.get_word_vector(word2))
+    def get_similarity(self, word1, word2):
+        return 1 - distance.cosine(self.get_word_vector(word1), self.get_word_vector(word2))
