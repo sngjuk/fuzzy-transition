@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.spatial import distance
 
-glossary = None
-glossary_vector = None
+glossary = {}
+glossary_vector = []
 path = None
 model = None
 
@@ -36,7 +36,12 @@ def most_sim_names(name_list, near_vectors, cur_vector, cur_name=None, second_ma
     return res_list
 
 
-def dfs(cur_name, target_name, cur_path, cur_prob, depth_limit, jump_limit=1, reason_th=0.35):
+def dfs(cur_name, target_name, cur_path, cur_prob, depth_limit=9, jump_limit=1, reason_th=0.35, find_length=None):
+    # show possible path
+    if find_length and len(cur_path) > find_length:
+        path.append([cur_path, cur_prob])
+        return
+
     if depth_limit < 0:
         return
 
@@ -57,10 +62,11 @@ def dfs(cur_name, target_name, cur_path, cur_prob, depth_limit, jump_limit=1, re
         if abs(reason_dict[reason][1]) < reason_th:
             continue
 
-        dfs(reason, target_name, cur_path + [reason], cur_prob + [reason_dict[reason][1]], depth_limit-1, jump_limit)
+        dfs(reason, target_name, cur_path + [reason], cur_prob + [reason_dict[reason][1]],
+            depth_limit-1, jump_limit, reason_th=reason_th, find_length=find_length)
 
     # just one hop jump;
-    if jump_limit > 0 and len(reason_dict) == 0:
+    if jump_limit > 0 and len(reason_dict) == 0 and not find_length:
         hopped_name_sim = most_sim_names(list(glossary.keys()), glossary_vector,
                                          model.get_word_vector(cur_name), cur_name, second_match=True)
 
@@ -148,7 +154,7 @@ def hop_vector_space(cur_name, target_name, target_vector, cur_path, cur_prob):
         del cur_path[-1]
         del cur_prob[-1]
         path.append([cur_path + [target_name],
-                     cur_prob + [distance.cosine(model.get_word_vector(cur_path[-1]), target_vector) ]])
+                     cur_prob + [distance.cosine(model.get_word_vector(cur_path[-1]), target_vector)]])
         print('fall into local minimum; duplicated loop! -> terminate!')
         return
 
@@ -157,32 +163,16 @@ def hop_vector_space(cur_name, target_name, target_vector, cur_path, cur_prob):
 
 
 # app: cross vector space
-def across_vector_space(gs, model_in, source, dest):
-    global glossary
+def across_vector_space(model_in, source, dest):
     global path
     global model
 
-    glossary = gs
     path = []
     model = model_in
 
     hop_vector_space(source, dest, model.get_word_vector(dest), [source], [])
 
     return path
-
-
-def dfs_with_length(cur_name, cur_path, cur_prob, depth, length):
-    if depth >= length:
-        path.append([cur_path, cur_prob])
-        return
-
-    reason_dict = glossary[cur_name].reason
-
-    for reason in reason_dict:
-        # prevent cycle
-        if reason in cur_path or reason not in glossary:
-            continue
-        dfs_with_length(reason, cur_path + [reason], cur_prob + [reason_dict[reason][1]], depth+1, length)
 
 
 # app: search hidden path
@@ -205,7 +195,7 @@ def search_hidden_path_with_length(gs, gsv, model_in, source, length=4):
 
     path_index = 0
     for s in sources:
-        dfs_with_length(s[0], [s[0]], [], 0, length)
+        dfs(s[0], None, [s[0]], [], depth_limit=length, find_length=length)
 
         if path_index == len(path):
             continue
