@@ -36,7 +36,7 @@ def most_sim_names(name_list, near_vectors, cur_vector, cur_name=None, second_ma
     return res_list
 
 
-def dfs(cur_name, target_name, cur_path, cur_prob, depth_limit, jump_limit=1):
+def dfs(cur_name, target_name, cur_path, cur_prob, depth_limit, jump_limit=1, reason_th=0.35):
     if depth_limit < 0:
         return
 
@@ -53,6 +53,10 @@ def dfs(cur_name, target_name, cur_path, cur_prob, depth_limit, jump_limit=1):
         # prevent cycle
         if reason in cur_path or reason not in glossary:
             continue
+
+        if abs(reason_dict[reason][1]) < reason_th:
+            continue
+
         dfs(reason, target_name, cur_path + [reason], cur_prob + [reason_dict[reason][1]], depth_limit-1, jump_limit)
 
     # just one hop jump;
@@ -89,6 +93,15 @@ def search_path(gs, gsv, model_in, source, dest, depth_limit=9, jump_limit=1):
     if usr_input[1] not in glossary:
         destinations = most_sim_names(list(glossary.keys()), glossary_vector,
                                       model.get_word_vector(dest), dest, False, 3)
+
+    print('source points')
+    for i in sources:
+        print(i[0], end=', ')
+    print('\n')
+    print('dest points')
+    for i in destinations:
+        print(i[0], end=', ')
+    print('\n')
 
     # source & dest is [['name', similarity], ['name2', similarity2], ...]
     path_index = 0

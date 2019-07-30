@@ -1,8 +1,11 @@
+#!/usr/bin/env python3
 import os
 import pickle
 import re
 from collections import OrderedDict
 from functools import reduce
+from os import path
+from time import sleep
 
 from model import Model
 from node import Node
@@ -24,19 +27,25 @@ def preprocess_input():
     return in_text
 
 
-def load_glossary(load_file):
-    if os.path.isfile(load_file):
+def load_glossary(file_name):
+    file_path = path.join('save', file_name)
+
+    if os.path.isfile(file_path):
         global glossary
         global glossary_vector
-        glossary, glossary_vector = pickle.load(open(load_file, 'rb'))
-        print('glossary loaded')
+        glossary, glossary_vector = pickle.load(open(file_path, 'rb'))
+        print(glossary.keys())
+        print('glossary loaded\n')
+    else:
+        print(f'\'{file_name}\' file not found in \'save\' folder ;)\n')
 
 
-def save_glossary():
-    pickle.dump((glossary, glossary_vector), open("save.p", "wb"))
+def save_glossary(file_name):
+    pickle.dump((glossary, glossary_vector), open(path.join('save', file_name), 'wb'))
 
 
 def list_glossary():
+    print('//glossary list')
     for i in glossary:
         print(glossary[i].name)
 
@@ -123,6 +132,8 @@ def find_path(source, dest):
         print('empty glossary')
         return
 
+    print('\n// find path')
+
     # path_prob: [[path_list, prob_list], ...]
     path_prob = search_path(glossary, glossary_vector, model, source, dest, setting['depth_limit'], setting['jump_limit'])
 
@@ -144,6 +155,7 @@ def find_path(source, dest):
 
 
 def across_space(source, dest):
+    print('\n// cross vector space')
     path_prob = across_vector_space(glossary, model, source, dest)
     print(path_prob)
 
@@ -152,6 +164,8 @@ def search_hidden_path(source, length):
     if not len(glossary):
         print('empty glossary')
         return
+
+    print('\n// hidden path')
 
     path_prob = search_hidden_path_with_length(glossary, glossary_vector, model, source, length)
 
@@ -177,125 +191,143 @@ def show_similarity(text1, text2):
     print('sim; %.4f' % model.get_similarity(text1, text2))
 
 
-def cli(load_file):
-    load_glossary(load_file)
-    print(glossary.keys(), '\n')
+def cli():
+    print('load file name? (example \'bug.p\')')
+    save_filename = preprocess_input()
+    load_glossary(save_filename)
 
     while True:
         print('===== select =====\nl; list glossary\na; add name\ndn: delete name\nai; add implication\
-              \nab: add belief \nam: add membership \nnn: show nearest neighbor \
-              \nsn: show noema \nss: show similarity \n\n=== paths ===\
+              \nab: add belief \nam: add membership \nnn: show nearest neighbor \nst: find path setting\
+              \nsn: show noema \nss: show similarity \n\n-=-=- paths -=-=-\
               \nfp; find path  \ncr: cross vector space \
-              \nsh: search hidden path \n\
-              \nx; exit')
-        sel = preprocess_input()
+              \nsh: search hidden path \n \
+              \n----- exit -----\
+              \nx; save &exit \nxx; exit without save')
 
-        if sel == 'l':
-            # list glossary
-            list_glossary()
+        try:
+            sel = preprocess_input()
 
-        elif sel == 'a':
-            print('input; name')
-            name = preprocess_input()
-            # add noema
-            res = add_noema(name)
-            if not res:
-                print('already exist')
+            if sel == 'l':
+                # list glossary
+                list_glossary()
 
-        elif sel == 'dn':
-            print('input; name to delete')
-            name = preprocess_input()
-            # delete noema
-            delete_noema(name)
+            elif sel == 'a':
+                print('input; name')
+                name = preprocess_input()
+                # add noema
+                res = add_noema(name)
+                if not res:
+                    print('already exist')
 
-        elif sel == 'ai':
-            print('input; source_name ')
-            source_name = preprocess_input()
-            print('input; target_name ')
-            target_name = preprocess_input()
-            print('input; probability')
-            probability = float(preprocess_input())
-            # add implication
-            add_implication(source_name, target_name, probability)
+            elif sel == 'dn':
+                print('input; name to delete')
+                name = preprocess_input()
+                # delete noema
+                delete_noema(name)
 
-        elif sel == 'ab':
-            print('input; source_name ')
-            source_name = preprocess_input()
-            print('input; target_name ')
-            target_name = preprocess_input()
-            print('input; probability')
-            probability = float(preprocess_input())
-            # add belief
-            add_belief(source_name, target_name, probability)
+            elif sel == 'ai':
+                print('input; source_name ')
+                source_name = preprocess_input()
+                print('input; target_name ')
+                target_name = preprocess_input()
+                print('input; probability')
+                probability = float(preprocess_input())
+                # add implication
+                add_implication(source_name, target_name, probability)
 
-        elif sel == 'am':
-            print('input; source_name ')
-            source_name = preprocess_input()
-            print('input; target_name ')
-            target_name = preprocess_input()
-            print('input; source->target probability')
-            target_prob = float(preprocess_input())
-            print('input; target->source probability')
-            source_prob = float(preprocess_input())
-            # add membership
-            add_membership(source_name, target_name, target_prob, source_prob)
+            elif sel == 'ab':
+                print('input; source_name ')
+                source_name = preprocess_input()
+                print('input; target_name ')
+                target_name = preprocess_input()
+                print('input; probability')
+                probability = float(preprocess_input())
+                # add belief
+                add_belief(source_name, target_name, probability)
 
-        elif sel == 'sn':
-            print('input; name')
-            name = preprocess_input()
-            # show relations
-            show_noema(name)
+            elif sel == 'am':
+                print('input; source_name ')
+                source_name = preprocess_input()
+                print('input; target_name ')
+                target_name = preprocess_input()
+                print(f'input; {source_name}->{target_name} similarity')
+                target_prob = float(preprocess_input())
+                print(f'input; {target_name}->{source_name} similarity')
+                source_prob = float(preprocess_input())
+                # add membership
+                add_membership(source_name, target_name, target_prob, source_prob)
 
-        elif sel == 'fp':
-            print('input; source ')
-            source = preprocess_input()
-            print('input; dest ')
-            dest = preprocess_input()
-            # find path
-            find_path(source, dest)
+            elif sel == 'sn':
+                print('input; name')
+                name = preprocess_input()
+                # show relations
+                show_noema(name)
 
-        elif sel == 'cr':
-            print('input; source ')
-            source = preprocess_input()
-            print('input; dest ')
-            dest = preprocess_input()
-            # find path
-            across_space(source, dest)
+            elif sel == 'st':
+                print('input; depth limit')
+                setting['depth_limit'] = int(preprocess_input())
+                print('input; jump limit')
+                setting['jump_limit'] = int(preprocess_input())
 
-        elif sel == 'sh':
-            print('input; source')
-            source = preprocess_input()
-            print('input; length')
-            length = int(preprocess_input())
-            # search hidden paths with length
-            search_hidden_path(source, length)
+            elif sel == 'fp':
+                print('input; source ')
+                source = preprocess_input()
+                print('input; dest ')
+                dest = preprocess_input()
+                # find path
+                find_path(source, dest)
 
-        elif sel == 'nn':
-            print('input; name')
-            name = preprocess_input()
-            # show nearest neighbor
-            show_nearest_neighbor(name)
+            elif sel == 'cr':
+                print('input; source ')
+                source = preprocess_input()
+                print('input; dest ')
+                dest = preprocess_input()
+                # find path
+                across_space(source, dest)
 
-        elif sel == 'ss':
-            print('input; word1')
-            word1 = preprocess_input()
-            print('input; word2')
-            word2 = preprocess_input()
-            # show word distance
-            show_similarity(word1, word2)
+            elif sel == 'sh':
+                print('input; source')
+                source = preprocess_input()
+                print('input; length')
+                length = int(preprocess_input())
+                # search hidden paths with length
+                search_hidden_path(source, length)
 
-        elif sel == 'x':
-            print('save & exit')
-            # save
-            save_glossary()
-            break
+            elif sel == 'nn':
+                print('input; name')
+                name = preprocess_input()
+                # show nearest neighbor
+                show_nearest_neighbor(name)
 
-        print('\nok\n')
+            elif sel == 'ss':
+                print('input; word1')
+                word1 = preprocess_input()
+                print('input; word2')
+                word2 = preprocess_input()
+                # show word distance
+                show_similarity(word1, word2)
+
+            elif sel == 'x':
+                print('save file name?')
+                save_filename = preprocess_input()
+                # save
+                save_glossary(save_filename)
+                break
+
+            elif sel == 'xx':
+                print('exit without save')
+                break
+
+            print('\nok\n')
+
+        except KeyboardInterrupt:
+            print('  \n\n### Plz Enter \'x\' or \'xx\' to exit ###\n')
+            sleep(0.33)
 
 
 def main():
-    load_file = 'save.p'
-    cli(load_file)
+    cli()
 
 
 if __name__ == '__main__':

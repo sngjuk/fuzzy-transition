@@ -19,17 +19,18 @@ class Model:
             for i, word in enumerate(self.ft_words):
                 self.ft_matrix[i, :] = self.get_word_vector(word)
 
-    # need to overwrite
+    # >> need to overwrite
     @staticmethod
     def load_model(model_path):
+        print('loading model ...')
         return fasttext.load_model(model_path)
 
-    # need to overwrite
+    # >> need to overwrite
     # // return type: Int : e.g.) 100
     def get_dimension(self):
         return self.model.get_dimension()
 
-    # need to overwrite
+    # >> need to overwrite
     # // return type: List : e.g.) [ embedding_vector, ... ], sentence is also supported
     def get_word_vector(self, word):
         # sentence
@@ -39,7 +40,7 @@ class Model:
         else:
             return self.model.get_word_vector(word)
 
-    # need to overwrite
+    # >> need to overwrite
     # // return type: List of Tuples: e.g.) [('word', similarity), ... ]
     def nearest_words(self, word, n=30, word_freq=None):
         result = self.find_nearest_neighbor(self.model.get_word_vector(word), self.ft_matrix, n=n)
@@ -48,9 +49,10 @@ class Model:
         else:
             return [(self.ft_words[r[0]], r[1]) for r in result]
 
-    # need to overwrite
+    # >> need to overwrite
     # // return type: List : e.g.) ['word', ... ]
-    # (include_freq=True): Tuple of List and numpy.ndarray : (['word', 'word2', ... ], array([9886, 5953, 4888, ..., 5, 5, 5])))
+    # (include_freq=True):
+    # Tuple of List and numpy.ndarray : (['word', 'word2', ... ], array([9886, 5953, 4888, ..., 5, 5, 5])))
     def get_words(self, include_freq=False):
         return self.model.get_words(include_freq=include_freq)
 
