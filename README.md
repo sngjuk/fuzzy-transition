@@ -1,20 +1,22 @@
-### install
+<h2> install </h2>
 *python3 is required
-##### client
+
+#### client
 ```
 pip install -r client_requirements.txt
 ```
-##### server
+#### server
 ```
 pip install -r requirements.txt
 ```
 
-### usage
-##### client 
-~> cli interface <br>
-``` 
+<h2> usage </h2>
+
+#### client
+~> cli interface
+```
 ./client.py 
-``` 
+```
 or
 ```python
 from client import FuzzyClient
@@ -23,7 +25,7 @@ fc = FuzzyClient(ip='35.200.11.163', port=8888)
 fc.user_select()
 ```
 
-##### server 
+#### server 
 ~> for inference and path finding
 ``` 
 ./server.py 
