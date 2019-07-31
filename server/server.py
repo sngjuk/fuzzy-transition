@@ -8,10 +8,11 @@ import random
 import threading
 from os import path
 
+import portalocker
 import zmq
 from scipy._lib.six import reduce
 
-from helper import set_logger
+from helper import set_logger, get_args_parser
 from nlp.model import EmbedModel
 from traverse import search_path, search_hidden_path_with_length, across_vector_space
 
@@ -83,7 +84,7 @@ class FuzzyServer(threading.Thread):
             self.model = model
             self.context = context
             self.socket = None
-            self.save_path = path.join('server', 'save')
+            self.save_path = path.join('save')
 
         @staticmethod
         def rep(rep_name, res_data=None):
@@ -167,8 +168,11 @@ class FuzzyServer(threading.Thread):
             file_path = path.join(self.save_path, file_name)
 
             if os.path.isfile(file_path):
-                glossary, glossary_vector = pickle.load(open(file_path, 'rb'))
-                return glossary, glossary_vector
+                with portalocker.Lock(file_path, 'rb+', timeout=3) as fh:
+                    glossary, glossary_vector = pickle.load(fh)
+                    fh.flush()
+                    os.fsync(fh.fileno())
+                    return glossary, glossary_vector
             else:
                 return None
 
@@ -179,7 +183,11 @@ class FuzzyServer(threading.Thread):
                 res_str += f'{file_name} updated!'
             else:
                 res_str += f'{file_name} written'
-            pickle.dump((glossary, glossary_vector), open(file_path, 'wb'))
+
+            with portalocker.Lock(file_path, 'wb+', timeout=3) as fh:
+                pickle.dump((glossary, glossary_vector), fh)
+                fh.flush()
+                os.fsync(fh.fileno())
             return res_str
 
         def get_word_vector(self, name):
@@ -208,7 +216,6 @@ class FuzzyServer(threading.Thread):
                 self.logger.info('request\treq worker id %d: %s' % (int(self.worker_id), str(request['req'])))
 
                 rq_res = None
-                protocol = -1
                 if request['req'] == 'fp':
                     # find path
                     rq_res = self.find_path(request['glossary'], request['glossary_vector'],
@@ -245,7 +252,7 @@ class FuzzyServer(threading.Thread):
 
                 elif request['req'] == 'x':
                     # get word vector
-                    rq_res = self.save_glossary(request['glossary'], request['glossary_vector'])
+                    rq_res = self.save_glossary(request['glossary'], request['glossary_vector'], request['name1'])
 
                 rq_msg = pickle.dumps(self.rep(request['req'], rq_res))
 
@@ -256,3 +263,15 @@ class FuzzyServer(threading.Thread):
             self.logger.info('shutting %d worker down ...' % self.worker_id)
             self.join()
             self.logger.info('%d worker terminated!' % self.worker_id)
+
+
+def main():
+    args = get_args_parser()
+    args.model_path = '/Users/user/Desktop/fuzzy-flow/server/nlp/namu_mecab_400.bin'
+    fs = FuzzyServer(args)
+    fs.start()
+    fs.join()
+
+
+if __name__ == '__main__':
+    main()
