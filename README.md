@@ -17,7 +17,7 @@ pip install -r requirements.txt
 ```
 ./client.py 
 ```
-or
+
 ```python
 from client import FuzzyClient
 
@@ -30,7 +30,7 @@ fc.user_select()
 ``` 
 ./server.py 
 ``` 
-or
+
 ```python
 from server import FuzzyServer
 
