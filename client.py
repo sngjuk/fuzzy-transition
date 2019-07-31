@@ -217,6 +217,7 @@ class FuzzyClient:
             self.show_name(name)
 
     def user_select(self):
+        print('~ welcome ~')
         print('load file name? (example \'bug.p\')')
         save_filename = self.preprocess_input()
         self.load_glossary(save_filename)
