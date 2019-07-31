@@ -6,7 +6,7 @@ from time import sleep
 
 import zmq
 
-from server.node import Node
+import node
 
 
 class FuzzyClient:
@@ -53,7 +53,7 @@ class FuzzyClient:
         if name in self.glossary:
             return False
 
-        neo = Node(name, self.get_word_vector(name))
+        neo = node.Node(name, self.get_word_vector(name))
         self.glossary[name] = neo
         self.glossary_vector.append(neo.vector)
 
