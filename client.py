@@ -370,7 +370,7 @@ class FuzzyClient:
 
 
 def main():
-    fc = FuzzyClient()
+    fc = FuzzyClient(ip='35.200.11.163', port=8888)
     fc.user_select()
 
 
