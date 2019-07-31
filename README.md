@@ -11,7 +11,9 @@ pip install -r requirements.txt
 
 ### usage
 ##### client 
-~> cli interface
+~> cli interface <br>
+``` ./client.py ``` <br>
+or
 ```python
 from client import FuzzyClient
 
@@ -21,6 +23,8 @@ fc.user_select()
 
 ##### server 
 ~> for inference and path finding
+``` ./server.py ``` <br>
+or
 ```python
 from server import FuzzyServer
 
