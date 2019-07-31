@@ -216,6 +216,10 @@ class FuzzyClient:
             print('\n')
             self.show_name(name)
 
+    def clear_glossary(self):
+        self.glossary = OrderedDict()
+        self.glossary_vector = []
+
     def user_select(self):
         print('~ welcome ~')
         print('load file name? (example \'bug.p\')')
@@ -228,7 +232,7 @@ class FuzzyClient:
                   \nln; list names\na; add name\ndn: delete name\nsa: show all names\nai; add implication\
                   \nab: add belief \nam: add membership \nnn: show nearest neighbor \nst: find path setting\
                   \nsn: show name \nss: show similarity \n\n-=-=- paths -=-=-\
-                  \nfp; find path  \ncr: cross vector space \
+                  \nfp; find path  \ncr: cross vector space \ncg: clear current glossary\
                   \nsp: search possible path \n \
                   \n----- exit -----\
                   \nx; save &exit \nxx; exit without save')
@@ -350,6 +354,10 @@ class FuzzyClient:
                     word2 = self.preprocess_input()
                     # show word distance
                     self.show_similarity(word1, word2)
+
+                elif sel == 'cg':
+                    # clear current glossary
+                    self.clear_glossary()
 
                 elif sel == 'x':
                     print('save file name?')
