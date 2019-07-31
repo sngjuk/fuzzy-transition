@@ -123,7 +123,7 @@ class FuzzyClient:
             print(f'->{i}; prob {self.glossary[name].belief[i][0]}, count {self.glossary[name].belief[i][1]}')
 
     def get_word_vector(self, name):
-        req_x = self.req('gw', name)
+        req_x = self.req('gw', name1=name)
         self.socket.send(pickle.dumps(req_x))
 
         res = self.socket.recv()

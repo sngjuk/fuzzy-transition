@@ -267,7 +267,6 @@ class FuzzyServer(threading.Thread):
 
 def main():
     args = get_args_parser()
-    args.model_path = '/Users/user/Desktop/fuzzy-flow/server/nlp/namu_mecab_400.bin'
     fs = FuzzyServer(args)
     fs.start()
     fs.join()
