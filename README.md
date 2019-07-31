@@ -1,5 +1,5 @@
 <h2> install </h2>
-*python3 is required
+python3 is required
 
 #### client
 ```
