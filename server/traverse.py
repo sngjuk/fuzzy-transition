@@ -37,9 +37,6 @@ def most_sim_names(name_list, near_vectors, cur_vector, cur_name=None, second_ma
 
 
 def dfs(cur_name, target_name, cur_path, cur_prob, depth_limit=9, jump_limit=1, sim_th=0.35, find_length=None):
-    print('cur_name!', cur_name)
-    print('cur_path!', cur_path)
-
     # show possible path
     if find_length and len(cur_path) > find_length:
         path.append([cur_path, cur_prob])
