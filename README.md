@@ -13,7 +13,7 @@ pip install -r requirements.txt
 <h2> usage </h2>
 
 #### > client
-~ cli interface
+cli interface
 ```
 ./client.py 
 ```
@@ -26,7 +26,7 @@ fc.user_select()
 ```
 
 #### > server 
-~ for inference and path finding
+for inference and path finding
 ``` 
 ./server.py --model_path 'some_path' --port 8888
 ``` 
