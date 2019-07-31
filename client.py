@@ -106,10 +106,10 @@ class FuzzyClient:
 
     def show_name(self, name):
         if len(self.glossary) == 0 or name not in self.glossary:
-            print('empty glossary or not exist noema')
+            print('empty glossary or not exist name')
             return
 
-        print(f'// show name; {name}')
+        print(f'//// {name}')
         print('=== membership ===')
         for i in self.glossary[name].membership:
             print(f'->{i}; prob {self.glossary[name].membership[i][0]}, count {self.glossary[name].membership[i][1]}')
@@ -180,13 +180,13 @@ class FuzzyClient:
         loaded_res = pickle.loads(res)
         print(loaded_res['res_data'])
 
-    def search_hidden_path(self, source, length):
+    def search_possible_path(self, source, length):
         if not len(self.glossary):
             print('empty glossary')
             return
 
-        setting = {'depth_limit': length}
-        req_x = self.req('sh', glossary=self.glossary, glossary_vector=self.glossary_vector,
+        setting = {'depth_limit': length, 'jump_limit': self.setting['jump_limit'], 'sim_th': self.setting['sim_th']}
+        req_x = self.req('sp', glossary=self.glossary, glossary_vector=self.glossary_vector,
                          name1=source, name2=None, setting=setting)
         self.socket.send(pickle.dumps(req_x))
 
@@ -211,18 +211,24 @@ class FuzzyClient:
         loaded_res = pickle.loads(res)
         print(loaded_res['res_data'])
 
+    def show_all_names(self):
+        for name in self.glossary:
+            print('\n')
+            self.show_name(name)
+
     def user_select(self):
         print('load file name? (example \'bug.p\')')
         save_filename = self.preprocess_input()
         self.load_glossary(save_filename)
+        self.list_names()
 
         while True:
             print('===== select ===== \nsl: server glossaries list \nlg: load server glossary\
-                  \nln; list names\na; add name\ndn: delete name\nai; add implication\
+                  \nln; list names\na; add name\ndn: delete name\nsa: show all names\nai; add implication\
                   \nab: add belief \nam: add membership \nnn: show nearest neighbor \nst: find path setting\
                   \nsn: show name \nss: show similarity \n\n-=-=- paths -=-=-\
                   \nfp; find path  \ncr: cross vector space \
-                  \nsh: search hidden path \n \
+                  \nsp: search possible path \n \
                   \n----- exit -----\
                   \nx; save &exit \nxx; exit without save')
 
@@ -257,6 +263,10 @@ class FuzzyClient:
                     name = self.preprocess_input()
                     # delete name
                     self.delete_name(name)
+
+                elif sel == 'sa':
+                    # show all names
+                    self.show_all_names()
 
                 elif sel == 'ai':
                     print('input; source_name ')
@@ -318,13 +328,13 @@ class FuzzyClient:
                     # find path
                     self.across_space(source, dest)
 
-                elif sel == 'sh':
+                elif sel == 'sp':
                     print('input; source')
                     source = self.preprocess_input()
                     print('input; length')
                     length = int(self.preprocess_input())
-                    # search hidden paths with length
-                    self.search_hidden_path(source, length)
+                    # search possible paths with length
+                    self.search_possible_path(source, length)
 
                 elif sel == 'nn':
                     print('input; name')
@@ -349,6 +359,7 @@ class FuzzyClient:
 
                 elif sel == 'xx':
                     print('exit without save')
+                    print('see ya')
                     break
 
                 print('\nok\n')

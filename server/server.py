@@ -14,7 +14,7 @@ from scipy._lib.six import reduce
 
 from helper import set_logger, get_args_parser
 from nlp.model import EmbedModel
-from traverse import search_path, search_hidden_path_with_length, across_vector_space
+from traverse import search_path, search_possible_path_with_length, across_vector_space
 
 
 class FuzzyServer(threading.Thread):
@@ -123,15 +123,15 @@ class FuzzyServer(threading.Thread):
             ret_str += '\n//total ~ %.2f ' % prob_sum
             return ret_str
 
-        def search_hidden_path(self, glossary, glossary_vector, source, setting):
+        def search_possible_path(self, glossary, glossary_vector, source, setting):
             ret_str = '// show possible paths\n'
             if not len(glossary):
                 ret_str += 'empty glossary\n'
                 return
-            ret_str += '\n// hidden path\n'
+            ret_str += '\n// possible paths\n'
 
-            path_prob = search_hidden_path_with_length(glossary, glossary_vector,
-                                                       self.model, source, setting['depth_limit'])
+            path_prob = search_possible_path_with_length(glossary, glossary_vector,
+                                                         self.model, source, setting['depth_limit'])
 
             if not len(path_prob):
                 ret_str += f'not found hidden path for {source} with length: \
@@ -221,10 +221,10 @@ class FuzzyServer(threading.Thread):
                     rq_res = self.find_path(request['glossary'], request['glossary_vector'],
                                             request['name1'], request['name2'], request['setting'])
 
-                elif request['req'] == 'sh':
-                    # search hidden paths with length
-                    rq_res = self.search_hidden_path(request['glossary'], request['glossary_vector'],
-                                                     request['name1'], request['setting'])
+                elif request['req'] == 'sp':
+                    # search possible paths with length
+                    rq_res = self.search_possible_path(request['glossary'], request['glossary_vector'],
+                                                       request['name1'], request['setting'])
 
                 elif request['req'] == 'cr':
                     # across space

@@ -36,7 +36,10 @@ def most_sim_names(name_list, near_vectors, cur_vector, cur_name=None, second_ma
     return res_list
 
 
-def dfs(cur_name, target_name, cur_path, cur_prob, depth_limit=9, jump_limit=1, reason_th=0.35, find_length=None):
+def dfs(cur_name, target_name, cur_path, cur_prob, depth_limit=9, jump_limit=1, sim_th=0.35, find_length=None):
+    print('cur_name!', cur_name)
+    print('cur_path!', cur_path)
+
     # show possible path
     if find_length and len(cur_path) > find_length:
         path.append([cur_path, cur_prob])
@@ -59,11 +62,11 @@ def dfs(cur_name, target_name, cur_path, cur_prob, depth_limit=9, jump_limit=1, 
         if reason in cur_path or reason not in glossary:
             continue
 
-        if abs(reason_dict[reason][1]) < reason_th:
+        if abs(reason_dict[reason][1]) < sim_th:
             continue
 
         dfs(reason, target_name, cur_path + [reason], cur_prob + [reason_dict[reason][1]],
-            depth_limit-1, jump_limit, reason_th=reason_th, find_length=find_length)
+            depth_limit - 1, jump_limit, sim_th=sim_th, find_length=find_length)
 
     # just one hop jump;
     if jump_limit > 0 and len(reason_dict) == 0 and not find_length:
@@ -72,12 +75,13 @@ def dfs(cur_name, target_name, cur_path, cur_prob, depth_limit=9, jump_limit=1, 
 
         hopped_name, hopped_sim = hopped_name_sim[0]
 
-        if hopped_name not in cur_path:
-            dfs(hopped_name, target_name, cur_path + [hopped_name], cur_prob + [hopped_sim], depth_limit-1, jump_limit-1)
+        if hopped_name not in cur_path and abs(hopped_sim) > sim_th:
+            dfs(hopped_name, target_name, cur_path + [hopped_name],
+                cur_prob + [hopped_sim], depth_limit-1, jump_limit-1, sim_th=sim_th)
 
 
 # app: find path
-def search_path(gs, gsv, model_in, source, dest, depth_limit=9, jump_limit=1):
+def search_path(gs, gsv, model_in, source, dest, depth_limit=9, jump_limit=1, sim_th=0.35):
     global glossary
     global glossary_vector
     global path
@@ -113,7 +117,7 @@ def search_path(gs, gsv, model_in, source, dest, depth_limit=9, jump_limit=1):
     path_index = 0
     for s in sources:
         for d in destinations:
-            dfs(s[0], d[0], [s[0]], [], depth_limit=depth_limit, jump_limit=jump_limit)
+            dfs(s[0], d[0], [s[0]], [], depth_limit=depth_limit, jump_limit=jump_limit, sim_th=sim_th)
 
             if path_index == len(path):
                 continue
@@ -176,7 +180,7 @@ def across_vector_space(model_in, source, dest):
 
 
 # app: search hidden path
-def search_hidden_path_with_length(gs, gsv, model_in, source, length=4):
+def search_possible_path_with_length(gs, gsv, model_in, source, length=4):
     global glossary
     global glossary_vector
     global path
@@ -195,6 +199,8 @@ def search_hidden_path_with_length(gs, gsv, model_in, source, length=4):
 
     path_index = 0
     for s in sources:
+        if sources[0][1] is not None:
+            length -= 1
         dfs(s[0], None, [s[0]], [], depth_limit=length, find_length=length)
 
         if path_index == len(path):
