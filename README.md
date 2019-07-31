@@ -1,4 +1,5 @@
 ### install
+*python3 is required
 ##### client
 ```
 pip install -r client_requirements.txt
