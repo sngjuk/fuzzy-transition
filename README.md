@@ -28,7 +28,7 @@ fc.user_select()
 #### > server 
 ~ for inference and path finding
 ``` 
-./server.py 
+./server.py --model_path 'some_path' --port 8888
 ``` 
 
 ```python
