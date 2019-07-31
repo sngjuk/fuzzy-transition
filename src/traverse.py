@@ -102,14 +102,16 @@ def search_path(gs, gsv, model_in, source, dest, depth_limit=9, jump_limit=1, si
         destinations = most_sim_names(list(glossary.keys()), glossary_vector,
                                       model.get_word_vector(dest), dest, False, 3)
 
-    # print('source points')
+    '''
+    print('source points')
     for i in sources:
         print(i[0], end=', ')
-    # print('\n')
-    # print('dest points')
+    print('\n')
+    print('dest points')
     for i in destinations:
         print(i[0], end=', ')
-    # print('\n')
+    print('\n')
+    '''
 
     # source & dest is [['name', similarity], ['name2', similarity2], ...]
     path_index = 0
