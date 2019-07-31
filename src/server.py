@@ -150,7 +150,18 @@ class FuzzyServer(threading.Thread):
             ret_str = ''
             ret_str += '\n// cross vector space\n'
             path_prob = across_vector_space(self.model, source, dest)
-            ret_str += str(path_prob)
+
+            prob_sum = 0
+            for i in path_prob:
+                ret_str += 'hop path; ' + str(i[0]) + '\n'
+                ret_str += '        '
+                for j in i[1]:
+                    ret_str += '   %2.2f' % j
+                prob = reduce((lambda x, y: x * y), i[1])
+                ret_str += '\n~ %.2f\n' % prob
+                prob_sum += prob
+
+            ret_str += '\n//total ~ %.2f ' % prob_sum
             return ret_str
 
         def show_nearest_neighbor(self, name, num=30, sim_threshold=0.39):
