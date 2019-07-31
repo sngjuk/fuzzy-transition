@@ -6,7 +6,7 @@ from time import sleep
 
 import zmq
 
-from node import Node
+from server.node import Node
 
 
 class FuzzyClient:
