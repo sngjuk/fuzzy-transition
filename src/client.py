@@ -49,7 +49,6 @@ class FuzzyClient:
             print(self.glossary[i].name)
 
     def add_name(self, name):
-        print('// add name')
         if name in self.glossary:
             return False
 
