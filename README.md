@@ -12,7 +12,7 @@ pip install -r requirements.txt
 
 <h2> usage </h2>
 
-#### client
+#### > client
 ~> cli interface
 ```
 ./client.py 
@@ -25,7 +25,7 @@ fc = FuzzyClient(ip='35.200.11.163', port=8888)
 fc.user_select()
 ```
 
-#### server 
+#### > server 
 ~> for inference and path finding
 ``` 
 ./server.py 
