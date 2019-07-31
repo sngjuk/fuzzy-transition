@@ -19,7 +19,8 @@ def most_sim_names(name_list, near_vectors, cur_vector, cur_name=None, second_ma
             del near_vectors_copied[rm_index]
 
         except ValueError:
-            print(f'no {cur_name} in glossary!')
+            # print(f'no {cur_name} in glossary!')
+            pass
 
     distances = distance.cdist(np.array([cur_vector]), np.array(near_vectors_copied), "cosine")[0]
 
@@ -101,14 +102,14 @@ def search_path(gs, gsv, model_in, source, dest, depth_limit=9, jump_limit=1, si
         destinations = most_sim_names(list(glossary.keys()), glossary_vector,
                                       model.get_word_vector(dest), dest, False, 3)
 
-    print('source points')
+    # print('source points')
     for i in sources:
         print(i[0], end=', ')
-    print('\n')
-    print('dest points')
+    # print('\n')
+    # print('dest points')
     for i in destinations:
         print(i[0], end=', ')
-    print('\n')
+    # print('\n')
 
     # source & dest is [['name', similarity], ['name2', similarity2], ...]
     path_index = 0
@@ -148,7 +149,7 @@ def hop_vector_space(cur_name, target_name, target_vector, cur_path, cur_prob):
     next_name_sim = most_sim_names(near_names, near_vectors, target_vector, max_num=1)
     next_name, similarity = next_name_sim[0]
 
-    print(f'/ {cur_name} -> {next_name}, sim: {similarity}')
+    # print(f'/ {cur_name} -> {next_name}, sim: {similarity}')
 
     if next_name in cur_path:
         # return shape : [[path, probability], ... ]
@@ -156,7 +157,7 @@ def hop_vector_space(cur_name, target_name, target_vector, cur_path, cur_prob):
         del cur_prob[-1]
         path.append([cur_path + [target_name],
                      cur_prob + [distance.cosine(model.get_word_vector(cur_path[-1]), target_vector)]])
-        print('fall into local minimum; duplicated loop! -> terminate!')
+        # print('fall into local minimum; duplicated loop! -> terminate!')
         return
 
     hop_vector_space(next_name, target_name, target_vector,
